@@ -1,0 +1,70 @@
+/* Olga's project lab: ocean ink, electric blue, coral, and clean white.
+   Native system fonts keep this GitHub Pages site independent of font CDNs. */
+:root{--ink:#163343;--muted:#576e7b;--blue:#2658cf;--blue-dark:#2049ac;--sky:#e9f1fc;--paper:#f7fbfc;--line:#dce8ed;--teal:#137e80;--display:'Trebuchet MS','Segoe UI',sans-serif}
+body{background:#f7fbfc}
+.topbar{max-width:1400px;background:transparent;padding:25px 48px;border-bottom:1px solid #dce8ed}
+.topbar::after{display:none}
+.brand{font-family:'Segoe UI',sans-serif;color:#163343;font-size:19px;font-weight:650;letter-spacing:-.5px;gap:14px}
+.brand-mark{position:relative;width:46px;height:46px;background:#163343;border-radius:14px;font-size:13px;box-shadow:none;letter-spacing:-.6px}
+.logo-dot{position:absolute;right:-3px;top:-3px;width:12px;height:12px;border-radius:50%;background:#f17f66;border:3px solid #f7fbfc}
+.brand-identity{display:flex;flex-direction:column;gap:2px}.brand-identity small{margin:0;font-size:9px;letter-spacing:1.5px;font-weight:500;color:#576e7b}
+.header-note{background:transparent;color:#576e7b;font-size:12px;font-weight:400;padding:0;letter-spacing:.2px}
+main{max-width:1340px;padding:60px 48px 65px}
+.welcome{grid-template-columns:minmax(0,1.4fr) minmax(330px,1fr);gap:40px 80px;align-items:start}
+.welcome .intro{padding:4px 0 0;min-width:0}
+.welcome .intro .eyebrow{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:1.6px;color:#137e80;margin-bottom:24px}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#137e80;box-shadow:0 0 0 4px #e0f2ee;flex-shrink:0}
+.welcome h1{font-family:'Trebuchet MS','Segoe UI',sans-serif;font-size:clamp(48px,5.5vw,76px);font-weight:700;letter-spacing:-3.8px;line-height:1.05;color:#163343;margin-bottom:27px}
+.welcome h1 .hero-highlight{color:#2658cf;position:relative;display:inline-block}
+.hero-highlight::after{content:"";position:absolute;bottom:-9px;left:2px;width:61%;height:5px;background:#f17f66;transform:rotate(-2deg);border-radius:50%}
+.welcome .intro-copy{font-size:17px;color:#486271;line-height:1.75;max-width:490px;margin-top:30px;margin-bottom:24px}
+.skill-ribbon{display:flex;flex-wrap:wrap;gap:8px}.skill-ribbon span{font-size:11px;color:#2a5766;border:1px solid #cce2e7;border-radius:5px;padding:5px 9px;background:#fff}
+.workflow-art{position:relative;background:#163343;color:#fff;border-radius:18px;margin:30px 0 0;padding:20px 23px 18px;overflow:hidden}
+.workflow-art::before{content:"";position:absolute;right:-25px;bottom:-75px;width:210px;height:210px;border:1px solid #ffffff10;border-radius:50%;pointer-events:none}
+.workflow-topline{display:flex;justify-content:space-between;align-items:center;color:#a9c8d3;font-size:9px;letter-spacing:1.6px;margin-bottom:22px}.workflow-topline span:last-child{color:#f6a18d;font-size:21px}
+.workflow-track{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr;align-items:center;gap:7px}
+.workflow-node{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}.node-symbol{display:grid;place-items:center;width:32px;height:32px;background:#284e5e;border:1px solid #477386;border-radius:8px;color:#b9d9e4;font:17px Consolas,monospace;margin-bottom:5px}.core-node .node-symbol{background:#f6a18d;border-color:#f6a18d;color:#163343}
+.workflow-node strong{font-size:12px;font-weight:600}.workflow-node small{color:#bed2da;font-size:9px;margin:0;line-height:1.5}.workflow-connector{color:#7da7b9;font-size:18px}
+.workflow-art figcaption{font-size:10px;line-height:1.6;color:#bed2da;margin-top:20px;padding-top:13px;border-top:1px solid #ffffff17}
+.welcome .auth-card{position:relative;background:#fff;border:1px solid #dce8ed;border-radius:20px;box-shadow:0 20px 50px #16334309;padding:32px;margin-top:9px}
+.access-icon{width:41px;height:41px;display:grid;place-items:center;font-size:23px;color:#2658cf;background:#e9f1fc;border-radius:12px;margin-bottom:22px}
+.welcome .auth-card .eyebrow{color:#137e80;font-size:9px;letter-spacing:1.7px;margin-bottom:12px}
+.welcome .auth-card h2{font-family:'Trebuchet MS','Segoe UI',sans-serif;font-size:29px;letter-spacing:-1px;line-height:1.2;max-width:290px}
+.welcome .auth-card .muted{font-size:13px;line-height:1.7;color:#576e7b;margin-top:12px}
+.welcome .tabs{background:#f1f6f8;margin:24px 0}.welcome .primary{background:#2658cf;border-radius:9px;padding:13px 16px}.welcome .primary:hover{background:#2049ac}
+.welcome label{font-size:12px}.welcome input{background:#fcfefe;border-color:#dce8ed}.welcome .text-button{color:#2658cf}.welcome .preview-box{margin-top:22px;font-size:11px;line-height:1.7}.welcome .preview-box .secondary{background:#f7fbfc;border-color:#dce8ed}.welcome .message{font-size:11px;color:#576e7b}.welcome .message.error{color:#a83138}
+.about-olga{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.25fr;gap:65px;padding-top:38px;margin-top:8px;border-top:1px solid #dce8ed}
+.about-lead .eyebrow{font-size:9px;color:#137e80;margin-bottom:15px;letter-spacing:1.5px}.about-lead h2{font-family:'Trebuchet MS','Segoe UI',sans-serif;font-size:28px;font-weight:600;line-height:1.3;letter-spacing:-.8px}
+.about-story p{font-size:13px;line-height:1.85;color:#576e7b;margin:0 0 15px}.about-story strong{color:#163343;font-weight:600}.about-story .about-closing{color:#137e80;margin-bottom:0}
+footer{border-color:#dce8ed;font-size:10px;max-width:1400px}
+@media(max-width:1050px){.welcome{gap:40px;grid-template-columns:minmax(0,1.2fr) minmax(310px,1fr)}main{padding:45px 30px}.topbar{padding:22px 30px}.welcome h1{font-size:59px;letter-spacing:-2.8px}.workflow-art{padding:18px}.about-olga{gap:35px}.workflow-node small{font-size:9px}}
+@media(max-width:760px){.welcome{grid-template-columns:1fr;gap:32px}.welcome .intro{padding:0}.welcome h1{font-size:clamp(44px,9vw,64px);letter-spacing:-2px}.welcome .intro-copy{font-size:15px;max-width:550px}.workflow-art{max-width:560px}.welcome .auth-card{margin-top:0}.about-olga{grid-template-columns:1fr;gap:18px;padding-top:28px}.about-lead h2{font-size:27px}.welcome .intro .eyebrow{font-size:9px;letter-spacing:1px}.topbar{padding:21px 20px}.brand{font-size:17px}.brand-identity small{font-size:8px;letter-spacing:1px}.header-note{display:none}main{padding:35px 20px 45px}.welcome .auth-card{padding:27px}.about-story p{font-size:13px}}
+@media(max-width:350px){.workflow-track{gap:4px;grid-template-columns:1fr 12px 1fr 12px 1fr}.workflow-node strong{font-size:10px}.workflow-node small{font-size:8px}.workflow-art{padding:17px 12px}.brand{font-size:15px}}
+@media(prefers-reduced-motion:no-preference){.workflow-connector{animation:signal 3s ease-in-out infinite}.workflow-connector:nth-of-type(2){animation-delay:.8s}@keyframes signal{0%,100%{opacity:.45}50%{opacity:1;color:#f6a18d}}}
+
+/* Authenticated portfolio: one introduction, one project collection. */
+.workspace .portfolio-intro{padding:12px 0 45px;border-bottom:1px solid var(--line);margin-bottom:38px}
+.workspace .portfolio-intro h1{font-family:var(--display);font-size:clamp(38px,5vw,65px);letter-spacing:-2px;line-height:1.08;margin:20px 0 30px;color:var(--ink)}
+.portfolio-intro h1 span{color:var(--blue);text-decoration:underline;text-decoration-color:#f17f66;text-decoration-thickness:4px;text-underline-offset:10px}
+.portfolio-story{max-width:900px;border-left:3px solid #f17f66;padding-left:25px}
+.portfolio-story p{font-size:16px;line-height:1.85;color:var(--muted);margin:0 0 17px}
+.portfolio-story .portfolio-lead{font-size:21px;color:var(--ink);line-height:1.6}
+.workspace .app-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.workspace .app-card{padding:30px;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:none}
+.workspace .app-card h3{font-family:var(--display);font-size:27px;margin:22px 0 14px}
+.workspace .app-card p{font-size:16px;line-height:1.75}
+.visitor-status{font-size:12px;margin:0 0 15px}
+@media(max-width:760px){.workspace .app-grid{grid-template-columns:1fr}.portfolio-story{padding-left:17px}.portfolio-story .portfolio-lead{font-size:18px}.workspace .portfolio-intro h1{letter-spacing:-1px}.portfolio-story p{font-size:15px}}
+
+.workspace .portfolio-intro{padding:12px 0 45px;border-bottom:1px solid var(--line);margin-bottom:38px}
+.workspace .portfolio-intro h1{font-family:var(--display);font-size:clamp(38px,5vw,65px);letter-spacing:-2px;line-height:1.08;margin:20px 0 30px;color:var(--ink)}
+.portfolio-intro h1 span{color:var(--blue);text-decoration:underline;text-decoration-color:#f17f66;text-decoration-thickness:4px;text-underline-offset:10px}
+.portfolio-story{max-width:900px;border-left:3px solid #f17f66;padding-left:25px}
+.portfolio-story p{font-size:16px;line-height:1.85;color:var(--muted);margin:0 0 17px}
+.portfolio-story .portfolio-lead{font-size:21px;color:var(--ink);line-height:1.6}
+.workspace .app-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.workspace .app-card{padding:30px;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:none}
+.workspace .app-card h3{font-family:var(--display);font-size:27px;margin:22px 0 14px}
+.workspace .app-card p{font-size:16px;line-height:1.75}
+.visitor-status{font-size:12px;margin:0 0 15px}
+@media(max-width:760px){.workspace .app-grid{grid-template-columns:1fr}.portfolio-story{padding-left:17px}.portfolio-story .portfolio-lead{font-size:18px}.workspace .portfolio-intro h1{letter-spacing:-1px}.portfolio-story p{font-size:15px}}

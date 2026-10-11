@@ -1,0 +1,11 @@
+[
+  {
+    "slug": "python-javascript-game",
+    "name": "Memory Cards game",
+    "description": "A browser-based memory game built with Python Flask, HTML, CSS, and vanilla JavaScript.",
+    "category": "Games",
+    "url": "https://pythonbasedmemorycards.onrender.com/",
+    "icon": "🃏",
+    "sort_order": 1
+  }
+]

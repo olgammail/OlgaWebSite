@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: olga-portfolio-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 60
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: olga_portal
+      - key: ALLOWED_ORIGINS
+        value: https://olgammail.github.io
+      - key: FRONTEND_URL
+        value: https://olgammail.github.io/OlgaWebSite/
+      - key: SESSION_HOURS
+        value: "8"
