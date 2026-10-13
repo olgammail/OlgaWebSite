@@ -32,6 +32,7 @@ async function api(path, { method = 'GET', data, authenticated = false } = {}) {
     if (!response.ok) {
       const error = new Error(result.error || 'The request could not be completed.');
       error.status = response.status;
+      error.code = result.code;
       throw error;
     }
     return result;
@@ -65,6 +66,7 @@ function setMode(next) {
   $('password').autocomplete = signup || update ? 'new-password' : 'current-password';
   $('password-hint').hidden = !(signup || update);
   $('auth-tabs').hidden = update;
+  $('google-access').hidden = reset || update || !googleReady;
   $('forgot').hidden = reset || update || !passwordResetAvailable;
   $('login-tab').classList.toggle('active', mode === 'login');
   $('signup-tab').classList.toggle('active', signup);
@@ -218,6 +220,7 @@ async function initialize() {
   }
   try {
     const capabilities = await api('/api/config');
+    if (capabilities.google_client_id) setupGoogle(capabilities.google_client_id);
     passwordResetAvailable = capabilities.password_reset_available;
     $('forgot').hidden = !passwordResetAvailable || mode === 'update';
     if (token && !resetToken) await showUser(await api('/api/me', { authenticated: true }));
@@ -225,5 +228,35 @@ async function initialize() {
     if (error.status === 401) { saveToken(''); showLoggedOut(); }
     else message('auth-message', error.message, true);
   }
+}
+let googleReady = false, googleBusy = false;
+function setupGoogle(clientId) {
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.async = true;
+  script.onload = () => {
+    google.accounts.id.initialize({ client_id: clientId, callback: handleGoogle, auto_select: false });
+    google.accounts.id.renderButton($('google-button'), { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular' });
+    googleReady = true;
+    $('google-access').hidden = mode === 'reset' || mode === 'update';
+  };
+  script.onerror = () => message('auth-message', 'Google sign-in could not load. You can still use email and password.', true);
+  document.head.append(script);
+}
+async function handleGoogle(response) {
+  if (googleBusy || !response.credential) return;
+  googleBusy = true;
+  message('auth-message', 'Verifying your Google account…');
+  try {
+    const data = { credential: response.credential };
+    if ($('password').value) data.password = $('password').value;
+    const session = await api('/api/google-login', { method: 'POST', data });
+    saveToken(session.token);
+    $('password').value = '';
+    await showUser(session);
+  } catch (error) {
+    if (error.code === 'password_required') { setMode('login'); $('password').focus(); }
+    message('auth-message', error.message, true);
+  } finally { googleBusy = false; }
 }
 initialize();

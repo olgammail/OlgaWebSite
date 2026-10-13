@@ -11,3 +11,4 @@ backend/projects.local.json
 
 *.local.html
 *.local.png
+*.local.cjs

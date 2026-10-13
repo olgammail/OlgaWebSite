@@ -139,3 +139,11 @@ From the website root:
 Tests use isolated `mongomock` storage and simulated email delivery, without modifying Atlas or sending emails. Verify real Atlas connectivity and your Render/SMTP configuration separately.
 
 Official references: [Render Flask deployment](https://render.com/docs/deploy-flask), [PyMongo connections](https://www.mongodb.com/docs/languages/python/pymongo-driver/current/connect/mongoclient/), [Atlas connection setup](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/).
+
+## Google sign-in
+
+GOOGLE_CLIENT_ID is the public OAuth Web application client ID. The Render Blueprint supplies it; no client secret is used. Configure https://olgammail.github.io in Google's Authorized JavaScript origins. For local testing add http://localhost:4173 and set GOOGLE_CLIENT_ID in backend/.env.
+
+The browser uses the official Google Identity Services button and posts the ID token as JSON to /api/google-login. The backend verifies signature, audience, issuer, expiry, and verified email using google-auth, then creates its own expiring session. Accounts are identified by Google's sub claim. No Google tokens or Google passwords are stored. Existing email/password accounts require their website password before linking to Google. Existing accounts remain available via email/password.
+
+Google Auth Platform Audience controls testing/public availability. Complete a real browser sign-in test with your own Google account after deployment; automated tests mock Google's verifier and never authenticate a real person.

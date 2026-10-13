@@ -8,13 +8,16 @@ import ssl
 import time
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
-from functools import wraps
+from functools import wraps, partial
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
 from dotenv import load_dotenv
 from email_validator import EmailNotValidError, validate_email
 from flask import Flask, g, jsonify, request
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport.requests import Request as GoogleRequest
+from google.auth.exceptions import TransportError
 from pymongo import MongoClient, ReturnDocument
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from werkzeug.exceptions import HTTPException
@@ -89,6 +92,7 @@ def create_app(database=None, settings=None):
     db = database
     app.extensions['database'] = db
     db.users.create_index('email', unique=True)
+    db.users.create_index('google_sub', unique=True, sparse=True)
     db.sessions.create_index('token_hash', unique=True)
     db.sessions.create_index('expires_at', expireAfterSeconds=0)
     db.password_resets.create_index('token_hash', unique=True)
@@ -97,6 +101,7 @@ def create_app(database=None, settings=None):
     db.applications.create_index('slug', unique=True)
     dummy_hash = generate_password_hash(secrets.token_urlsafe(32), method='scrypt')
     smtp_ready = bool(cfg.get('SMTP_HOST') and cfg.get('SMTP_FROM'))
+    google_client_id = cfg.get('GOOGLE_CLIENT_ID', '').strip()
 
     @app.before_request
     def guard_request():
@@ -173,6 +178,13 @@ def create_app(database=None, settings=None):
     def public_user(user):
         return {'name': user['name'], 'email': user['email']}
 
+    def start_session(user):
+        token = secrets.token_urlsafe(32)
+        expires = utcnow() + timedelta(hours=hours)
+        db.sessions.insert_one({'token_hash': digest(token), 'user_id': user['_id'],
+                                'auth_version': user.get('auth_version', 0), 'expires_at': expires})
+        return jsonify(token=token, expires_at=expires.isoformat(), user=public_user(user))
+
     def require_login(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
@@ -195,7 +207,7 @@ def create_app(database=None, settings=None):
 
     @app.get('/api/config')
     def capabilities():
-        return jsonify(password_reset_available=smtp_ready)
+        return jsonify(password_reset_available=smtp_ready, google_client_id=google_client_id)
 
     @app.post('/api/register')
     def register():
@@ -227,14 +239,63 @@ def create_app(database=None, settings=None):
         if limited('login-email', email, 10, 900):
             return too_many()
         user = db.users.find_one({'email': email})
-        matched = check_password_hash(user['password_hash'] if user else dummy_hash, password)
+        matched = check_password_hash(user.get('password_hash', dummy_hash) if user else dummy_hash, password)
         if not user or not matched:
             return jsonify(error='Email or password is incorrect.'), 401
-        token = secrets.token_urlsafe(32)
-        expires = utcnow() + timedelta(hours=hours)
-        db.sessions.insert_one({'token_hash': digest(token), 'user_id': user['_id'],
-                                'auth_version': user.get('auth_version', 0), 'expires_at': expires})
-        return jsonify(token=token, expires_at=expires.isoformat(), user=public_user(user))
+        return start_session(user)
+
+    @app.post('/api/google-login')
+    def google_login():
+        if not google_client_id:
+            return jsonify(error='Google sign-in is not configured yet.'), 503
+        # GIS uses a JavaScript callback and JSON fetch, not a cookie-based redirect.
+        if request.headers.get('Origin') not in origins:
+            return jsonify(error='Use the website to sign in with Google.'), 403
+        if limited('google-login', request.remote_addr, 20, 900):
+            return too_many()
+        data = body()
+        credential = data.get('credential')
+        if not isinstance(credential, str) or not 1 <= len(credential) <= 12000:
+            return jsonify(error='Google sign-in could not be verified. Please try again.'), 401
+        try:
+            claims = google_id_token.verify_oauth2_token(credential, partial(GoogleRequest(), timeout=10), google_client_id)
+        except ValueError:
+            return jsonify(error='Google sign-in could not be verified. Please try again.'), 401
+        except (TransportError, OSError):
+            return jsonify(error='Google verification is temporarily unavailable. Please try again.'), 503
+        subject, email = claims.get('sub'), email_from(claims)
+        if claims.get('iss') not in {'accounts.google.com', 'https://accounts.google.com'} or claims.get('aud') != google_client_id or not isinstance(subject, str) or not subject or len(subject) > 255 or not email or claims.get('email_verified') is not True:
+            return jsonify(error='Google sign-in could not be verified. Please try again.'), 401
+        user = db.users.find_one({'google_sub': subject})
+        if user:
+            return start_session(user)
+        existing = db.users.find_one({'email': email})
+        if existing:
+            # Existing password registrations don't verify email ownership.
+            # Require both login methods before linking, never match email alone.
+            password = data.get('password')
+            if not valid_password(password) or not existing.get('password_hash') or existing.get('google_sub'):
+                return jsonify(error='An account already uses this email. Enter its website password, then choose Google again to link it.', code='password_required'), 409
+            if not check_password_hash(existing['password_hash'], password):
+                return jsonify(error='The website password is incorrect.'), 401
+            try:
+                linked = db.users.find_one_and_update({'_id': existing['_id'], 'google_sub': {'$exists': False}}, {'$set': {'google_sub': subject}}, return_document=ReturnDocument.AFTER)
+            except DuplicateKeyError:
+                linked = None
+            if not linked:
+                return jsonify(error='The account changed. Please sign in again.'), 409
+            return start_session(linked)
+        name = claims.get('name')
+        name = name.strip()[:80] if isinstance(name, str) and name.strip() else email.split('@')[0][:80]
+        try:
+            record = {'name': name, 'email': email, 'google_sub': subject, 'created_at': utcnow(), 'auth_version': 0}
+            record['_id'] = db.users.insert_one(record).inserted_id
+        except DuplicateKeyError:
+            # A simultaneous request may have created this Google user.
+            record = db.users.find_one({'google_sub': subject})
+            if not record:
+                return jsonify(error='An account already uses this email. Sign in with its website password first.'), 409
+        return start_session(record)
 
     @app.get('/api/me')
     @require_login

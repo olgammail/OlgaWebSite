@@ -8,6 +8,8 @@ services:
     startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 60
     healthCheckPath: /health
     envVars:
+      - key: GOOGLE_CLIENT_ID
+        value: 69857824216-gbhi74sm21jr83q6lm9eh1b91c8kgo9t.apps.googleusercontent.com
       - key: PYTHON_VERSION
         value: 3.12.14
       - key: MONGODB_URI
