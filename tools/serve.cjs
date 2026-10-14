@@ -3,7 +3,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const allowed = new Set(['index.html', 'styles.css', 'landing.css', 'app.js', 'config.js', 'workspace-preview.local.html']);
+const allowed = new Set(['index.html', 'styles.css', 'landing.css', 'app.js', 'config.js', 'workspace-preview.local.html', 'auth-preview.local.html']);
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
 http.createServer((req, res) => {
   let filename;
@@ -15,4 +15,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': `${types[path.extname(filename)]}; charset=utf-8`, 'Cache-Control': 'no-store' });
     res.end(data);
   });
-}).listen(4173, '127.0.0.1', () => console.log('Preview: http://localhost:4173'));
+}).listen(Number(process.argv[2] || 4173), '127.0.0.1', () => console.log('Preview server ready.'));

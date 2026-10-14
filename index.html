@@ -39,17 +39,34 @@
       <div class="auth-card">
         <div class="access-icon" aria-hidden="true">↗</div>
         <p class="eyebrow">STEP INSIDE THE LAB</p>
-        <h2 id="auth-title">Explore what I’m building.</h2>
+        <h2 id="auth-title">Step inside the project lab.</h2>
         <p id="auth-copy" class="muted">Sign in to browse my projects, from games to an evolving collection of AI workflows.</p>
-        <div id="auth-tabs" class="tabs" aria-label="Account options"><button id="login-tab" class="active" aria-pressed="true">Sign in</button><button id="signup-tab" aria-pressed="false">Create account</button></div>
-        <div id="google-access" hidden><div id="google-button"></div><p class="google-divider">or use your email and password</p></div>
-        <form id="auth-form">
-          <div id="name-field" hidden><label for="name">Your name</label><input id="name" name="name" autocomplete="name" maxlength="80"></div>
-          <div id="email-field"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></div>
-          <div id="password-field"><div class="label-row"><label for="password">Password</label><button id="toggle-password" class="text-button" type="button" aria-pressed="false">Show</button></div><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128"><small id="password-hint" hidden>Use 8–128 characters.</small></div>
-          <button id="submit-auth" class="button primary" type="submit">Sign in & explore <span aria-hidden="true">→</span></button>
+        <section id="provider-access" class="provider-access" aria-label="Choose how to sign in">
+          <p class="provider-title">Choose an account to continue</p>
+          <div id="google-access" hidden><div id="google-button"></div></div>
+          <button id="github-button" class="github-button" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.77-.24.77-.54v-2.1c-3.14.68-3.8-1.33-3.8-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 .1 1.53 1.93 3.3 1.17.1-.73.39-1.23.71-1.52-2.5-.28-5.13-1.25-5.13-5.57 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.08 1.15a10.7 10.7 0 0 1 5.6 0c2.14-1.45 3.08-1.15 3.08-1.15.62 1.55.23 2.7.12 2.98.72.79 1.15 1.79 1.15 3.02 0 4.34-2.64 5.28-5.15 5.56.4.35.76 1.03.76 2.08v2.99c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></svg>Continue with GitHub</button>
+          <p class="provider-hint">Google and GitHub handle their own sign-in. No password needed here.</p>
+        </section>
+        <details id="email-access" class="email-access">
+          <summary>Use your website account instead</summary>
+          <p class="email-help">These details belong to this website. Use your website password here.</p>
+          <div id="auth-tabs" class="tabs" aria-label="Website account options"><button id="login-tab" class="active" aria-pressed="true">Website sign in</button><button id="signup-tab" aria-pressed="false">Create website account</button></div>
+          <form id="auth-form">
+            <div id="name-field" hidden><label for="name">Your name</label><input id="name" name="name" autocomplete="name" maxlength="80"></div>
+            <div id="email-field"><label for="email">Website account email</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></div>
+            <div id="password-field"><div class="label-row"><label for="password">Website password</label><button id="toggle-password" class="text-button" type="button" aria-pressed="false">Show</button></div><input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128"><small id="password-hint" hidden>Use 8–128 characters.</small></div>
+            <button id="submit-auth" class="button primary" type="submit">Sign in with website account →</button>
+          </form>
+          <button id="forgot" class="text-button forgot" hidden>Forgot your website password?</button>
+        </details>
+        <form id="link-form" class="link-form" hidden>
+          <h3>Link your existing website account</h3>
+          <p>You already have a website account with this email. Confirm its password once to add this sign-in method.</p>
+          <label for="link-password">Website password — not your Google or GitHub password</label>
+          <input id="link-password" type="password" autocomplete="current-password" required minlength="8" maxlength="128">
+          <button id="submit-link" class="button primary" type="submit">Link account and continue →</button>
+          <button id="cancel-link" class="text-button" type="button">Cancel</button>
         </form>
-        <button id="forgot" class="text-button forgot" hidden>Forgot your password?</button>
         <p id="auth-message" class="message" role="status" aria-live="polite"></p>
       </div>
       <section class="about-olga" aria-labelledby="about-heading">

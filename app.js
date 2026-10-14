@@ -5,6 +5,14 @@ let resetToken = new URLSearchParams(location.search).get('reset_token'), passwo
 // Session tokens are tab-scoped. Database credentials never reach the browser.
 let token = '';
 try { token = sessionStorage.getItem('olga-portal-session') || ''; } catch {}
+const githubReturn = new URLSearchParams(location.search);
+const githubCode = githubReturn.get('code'), githubState = githubReturn.get('state');
+const githubDenied = githubReturn.get('error') && githubReturn.get('state');
+if (githubCode || githubDenied) {
+  const clean = new URL(location.href);
+  for (const key of ['code', 'state', 'error', 'error_description', 'error_uri']) clean.searchParams.delete(key);
+  history.replaceState(null, '', clean);
+}
 const apiBase = (config.apiBaseUrl || '').replace(/\/$/, '');
 if (resetToken) {
   const cleanUrl = new URL(location.href);
@@ -33,6 +41,7 @@ async function api(path, { method = 'GET', data, authenticated = false } = {}) {
       const error = new Error(result.error || 'The request could not be completed.');
       error.status = response.status;
       error.code = result.code;
+      error.linkTicket = result.link_ticket;
       throw error;
     }
     return result;
@@ -51,7 +60,7 @@ function message(id, text = '', error = false) {
 function setMode(next) {
   mode = next;
   const signup = mode === 'signup', reset = mode === 'reset', update = mode === 'update';
-  $('auth-title').textContent = signup ? 'Come explore with me.' : reset ? 'Reset your password' : update ? 'Choose a new password' : 'Explore what I’m building.';
+  $('auth-title').textContent = signup ? 'Create your website account.' : reset ? 'Reset your password' : update ? 'Choose a new password' : 'Step inside the project lab.';
   $('auth-copy').textContent = signup ? 'Create an account to explore my games and follow my work in AI automation.' : reset ? 'We’ll email you a password reset link.' : update ? 'Use at least 8 characters for your new password.' : 'Sign in to browse my projects, from games to an evolving collection of AI workflows.';
   $('name-field').hidden = !signup;
   $('name').required = signup;
@@ -66,13 +75,14 @@ function setMode(next) {
   $('password').autocomplete = signup || update ? 'new-password' : 'current-password';
   $('password-hint').hidden = !(signup || update);
   $('auth-tabs').hidden = update;
-  $('google-access').hidden = reset || update || !googleReady;
+  $('provider-access').hidden = reset || update;
+  if (reset || update) $('email-access').open = true;
   $('forgot').hidden = reset || update || !passwordResetAvailable;
   $('login-tab').classList.toggle('active', mode === 'login');
   $('signup-tab').classList.toggle('active', signup);
   $('login-tab').setAttribute('aria-pressed', String(mode === 'login'));
   $('signup-tab').setAttribute('aria-pressed', String(signup));
-  $('submit-auth').textContent = signup ? 'Create account →' : reset ? 'Send reset link →' : update ? 'Save password →' : 'Sign in & explore →';
+  $('submit-auth').textContent = signup ? 'Create website account →' : reset ? 'Send reset link →' : update ? 'Save password →' : 'Sign in with website account →';
   message('auth-message');
 }
 $('login-tab').onclick = () => setMode('login');
@@ -220,9 +230,12 @@ async function initialize() {
   }
   try {
     const capabilities = await api('/api/config');
+    $('github-button').hidden = !capabilities.github_available;
+    if (!capabilities.google_client_id && !capabilities.github_available) $('email-access').open = true;
     if (capabilities.google_client_id) setupGoogle(capabilities.google_client_id);
     passwordResetAvailable = capabilities.password_reset_available;
     $('forgot').hidden = !passwordResetAvailable || mode === 'update';
+    if (githubCode || githubDenied) { await finishGitHub(); return; }
     if (token && !resetToken) await showUser(await api('/api/me', { authenticated: true }));
   } catch (error) {
     if (error.status === 401) { saveToken(''); showLoggedOut(); }
@@ -232,16 +245,26 @@ async function initialize() {
 let googleReady = false, googleBusy = false;
 function setupGoogle(clientId) {
   const script = document.createElement('script');
-  script.src = 'https://accounts.google.com/gsi/client';
+  script.src = 'https://accounts.google.com/gsi/client?hl=en';
   script.async = true;
   script.onload = () => {
     google.accounts.id.initialize({ client_id: clientId, callback: handleGoogle, auto_select: false });
-    google.accounts.id.renderButton($('google-button'), { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular' });
+    google.accounts.id.renderButton($('google-button'), { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', locale: 'en', width: Math.min(300, Math.max(200, $('google-button').clientWidth)) });
     googleReady = true;
     $('google-access').hidden = mode === 'reset' || mode === 'update';
   };
   script.onerror = () => message('auth-message', 'Google sign-in could not load. You can still use email and password.', true);
   document.head.append(script);
+}
+let pendingLink = null;
+function requestLink(provider, proof, error) {
+  pendingLink = { provider, proof };
+  $('link-form').hidden = false;
+  $('email-access').hidden = true;
+  $('provider-access').hidden = true;
+  $('link-password').value = '';
+  $('link-password').focus();
+  message('auth-message', error.message);
 }
 async function handleGoogle(response) {
   if (googleBusy || !response.credential) return;
@@ -249,14 +272,65 @@ async function handleGoogle(response) {
   message('auth-message', 'Verifying your Google account…');
   try {
     const data = { credential: response.credential };
-    if ($('password').value) data.password = $('password').value;
     const session = await api('/api/google-login', { method: 'POST', data });
     saveToken(session.token);
     $('password').value = '';
     await showUser(session);
   } catch (error) {
-    if (error.code === 'password_required') { setMode('login'); $('password').focus(); }
+    if (error.code === 'password_required') requestLink('google', response.credential, error);
     message('auth-message', error.message, true);
   } finally { googleBusy = false; }
+}
+$('cancel-link').onclick = () => {
+  pendingLink = null;
+  $('link-form').hidden = true;
+  $('email-access').hidden = false;
+  $('link-password').value = '';
+  setMode('login');
+};
+$('link-form').onsubmit = async event => {
+  event.preventDefault();
+  if (!pendingLink) return;
+  $('submit-link').disabled = true;
+  try {
+    const data = { password: $('link-password').value };
+    const provider = pendingLink.provider;
+    if (provider === 'google') data.credential = pendingLink.proof;
+    else data.link_ticket = pendingLink.proof;
+    const session = await api(provider === 'google' ? '/api/google-login' : '/api/github/link', { method: 'POST', data });
+    pendingLink = null;
+    $('link-password').value = '';
+    $('link-form').hidden = true;
+    $('email-access').hidden = false;
+    setMode('login');
+    saveToken(session.token);
+    await showUser(session);
+  } catch (error) { message('auth-message', error.message, true); }
+  finally { $('submit-link').disabled = false; }
+};
+$('github-button').onclick = async () => {
+  $('github-button').disabled = true;
+  try {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    const browserKey = [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
+    const result = await api('/api/github/start', { method: 'POST', data: { browser_key: browserKey } });
+    sessionStorage.setItem('olga-github-attempt', JSON.stringify({ state: result.state, browser_key: browserKey }));
+    location.assign(result.authorize_url);
+  } catch (error) { message('auth-message', error.message || 'Your browser must allow session storage for GitHub sign-in.', true); $('github-button').disabled = false; }
+};
+async function finishGitHub() {
+  try {
+    const attempt = JSON.parse(sessionStorage.getItem('olga-github-attempt') || 'null');
+    sessionStorage.removeItem('olga-github-attempt');
+    if (!attempt || attempt.state !== githubState) throw new Error('This GitHub sign-in did not start in this tab. Please try again.');
+    if (githubDenied) throw new Error('GitHub sign-in was cancelled. Choose a sign-in method to try again.');
+    message('auth-message', 'Verifying your GitHub account…');
+    const session = await api('/api/github/finish', { method: 'POST', data: { ...attempt, code: githubCode } });
+    saveToken(session.token);
+    await showUser(session);
+  } catch (error) {
+    if (error.code === 'password_required' && error.linkTicket) requestLink('github', error.linkTicket, error);
+    else message('auth-message', error.message || 'GitHub sign-in could not be completed.', true);
+  }
 }
 initialize();

@@ -8,7 +8,7 @@ from backend.app import create_app, digest, utcnow
 class AuthTests(unittest.TestCase):
     def setUp(self):
         self.db = mongomock.MongoClient(tz_aware=True).test_portal
-        self.settings = {'ALLOWED_ORIGINS': 'http://localhost:4173', 'FRONTEND_URL': 'http://localhost:4173/', 'SMTP_HOST': '', 'SMTP_FROM': '', 'RENDER': ''}
+        self.settings = {'ALLOWED_ORIGINS': 'http://localhost:4173', 'FRONTEND_URL': 'http://localhost:4173/', 'SMTP_HOST': '', 'SMTP_FROM': '', 'SMTP_USE_SSL': 'false', 'RENDER': ''}
         self.app = create_app(self.db, self.settings)
         self.client = self.app.test_client()
         self.account = {'name': 'Test Visitor', 'email': 'visitor@example.com', 'password': 'Testing-password-123'}
@@ -130,13 +130,15 @@ class AuthTests(unittest.TestCase):
     def test_reset_email_link_and_generic_response(self):
         self.register()
         app = create_app(self.db, {**self.settings, 'SMTP_HOST': 'smtp.example.com', 'SMTP_FROM': 'sender@example.com'})
-        with patch('backend.app.smtplib.SMTP') as smtp:
+        with patch('backend.app.ssl.create_default_context') as tls_context, patch('backend.app.smtplib.SMTP') as smtp:
             client = app.test_client()
             known = client.post('/api/password-reset/request', json={'email': self.account['email']})
             unknown = client.post('/api/password-reset/request', json={'email': 'unknown@example.com'})
             self.assertEqual(known.json, unknown.json)
             self.assertNotIn('token', known.json)
             mail = smtp.return_value.__enter__.return_value.send_message.call_args.args[0]
+            tls_context.assert_called_once()
+            smtp.return_value.__enter__.return_value.starttls.assert_called_once_with(context=tls_context.return_value)
             self.assertIn('http://localhost:4173/?reset_token=', mail.get_content())
             self.assertEqual(self.db.password_resets.count_documents({}), 1)
 

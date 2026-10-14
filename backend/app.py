@@ -1,4 +1,5 @@
 """MongoDB-backed visitor accounts for Olga's GitHub Pages website."""
+import base64
 import hashlib
 import logging
 import os
@@ -11,6 +12,8 @@ from email.message import EmailMessage
 from functools import wraps, partial
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
+
+import requests as http_requests
 
 from dotenv import load_dotenv
 from email_validator import EmailNotValidError, validate_email
@@ -93,6 +96,9 @@ def create_app(database=None, settings=None):
     app.extensions['database'] = db
     db.users.create_index('email', unique=True)
     db.users.create_index('google_sub', unique=True, sparse=True)
+    db.users.create_index('github_id', unique=True, sparse=True)
+    db.oauth_attempts.create_index('expires_at', expireAfterSeconds=0)
+    db.provider_links.create_index('expires_at', expireAfterSeconds=0)
     db.sessions.create_index('token_hash', unique=True)
     db.sessions.create_index('expires_at', expireAfterSeconds=0)
     db.password_resets.create_index('token_hash', unique=True)
@@ -102,6 +108,9 @@ def create_app(database=None, settings=None):
     dummy_hash = generate_password_hash(secrets.token_urlsafe(32), method='scrypt')
     smtp_ready = bool(cfg.get('SMTP_HOST') and cfg.get('SMTP_FROM'))
     google_client_id = cfg.get('GOOGLE_CLIENT_ID', '').strip()
+    github_id = cfg.get('GITHUB_CLIENT_ID', '').strip()
+    github_secret = cfg.get('GITHUB_CLIENT_SECRET', '').strip()
+    github_ready = bool(github_id and github_secret)
 
     @app.before_request
     def guard_request():
@@ -207,7 +216,7 @@ def create_app(database=None, settings=None):
 
     @app.get('/api/config')
     def capabilities():
-        return jsonify(password_reset_available=smtp_ready, google_client_id=google_client_id)
+        return jsonify(password_reset_available=smtp_ready, google_client_id=google_client_id, github_available=github_ready)
 
     @app.post('/api/register')
     def register():
@@ -296,6 +305,118 @@ def create_app(database=None, settings=None):
             if not record:
                 return jsonify(error='An account already uses this email. Sign in with its website password first.'), 409
         return start_session(record)
+
+    def github_identity(identity, password=None):
+        subject, email = identity['github_id'], identity['email']
+        user = db.users.find_one({'github_id': subject})
+        if user:
+            return start_session(user)
+        existing = db.users.find_one({'email': email})
+        if existing:
+            if not valid_password(password):
+                ticket = secrets.token_urlsafe(32)
+                db.provider_links.insert_one({'_id': digest(ticket), 'identity': identity,
+                    'expires_at': utcnow() + timedelta(minutes=5)})
+                return jsonify(error='Confirm your existing website password to link GitHub.', code='password_required', link_ticket=ticket), 409
+            if not existing.get('password_hash') or existing.get('github_id') or not check_password_hash(existing['password_hash'], password):
+                return jsonify(error='The website password is incorrect, or this account uses another sign-in method.'), 401
+            try:
+                linked = db.users.find_one_and_update({'_id': existing['_id'], 'github_id': {'$exists': False}}, {'$set': {'github_id': subject}}, return_document=ReturnDocument.AFTER)
+            except DuplicateKeyError:
+                linked = None
+            if not linked:
+                return jsonify(error='The account changed. Please sign in again.'), 409
+            return start_session(linked)
+        record = {**identity, 'created_at': utcnow(), 'auth_version': 0}
+        try:
+            record['_id'] = db.users.insert_one(record).inserted_id
+        except DuplicateKeyError:
+            record = db.users.find_one({'github_id': subject})
+            if not record:
+                return jsonify(error='The account changed. Please sign in again.'), 409
+        return start_session(record)
+
+    @app.post('/api/github/start')
+    def github_start():
+        if not github_ready:
+            return jsonify(error='GitHub sign-in is not configured yet.'), 503
+        if request.headers.get('Origin') not in origins:
+            return jsonify(error='Use the website to sign in with GitHub.'), 403
+        if limited('github-start', request.remote_addr, 20, 900):
+            return too_many()
+        browser_key = body().get('browser_key')
+        if not isinstance(browser_key, str) or not 32 <= len(browser_key) <= 128:
+            return jsonify(error='Unable to start GitHub sign-in.'), 400
+        state, verifier = secrets.token_urlsafe(32), secrets.token_urlsafe(48)
+        challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
+        db.oauth_attempts.insert_one({'_id': digest(state), 'browser_key': digest(browser_key),
+            'verifier': verifier, 'expires_at': utcnow() + timedelta(minutes=10)})
+        url = 'https://github.com/login/oauth/authorize?' + urlencode({'client_id': github_id,
+            'redirect_uri': frontend, 'scope': 'read:user user:email', 'state': state,
+            'code_challenge': challenge, 'code_challenge_method': 'S256'})
+        return jsonify(authorize_url=url, state=state)
+
+    @app.post('/api/github/finish')
+    def github_finish():
+        if not github_ready:
+            return jsonify(error='GitHub sign-in is not configured yet.'), 503
+        if request.headers.get('Origin') not in origins:
+            return jsonify(error='Use the website to sign in with GitHub.'), 403
+        if limited('github-finish', request.remote_addr, 20, 900):
+            return too_many()
+        data = body()
+        if not all(isinstance(data.get(key), str) and 1 <= len(data[key]) <= 256 for key in ['state', 'code', 'browser_key']):
+            return jsonify(error='Invalid GitHub sign-in response.'), 400
+        attempt = db.oauth_attempts.find_one_and_delete({'_id': digest(data['state']),
+            'browser_key': digest(data['browser_key']), 'expires_at': {'$gt': utcnow()}})
+        if not attempt:
+            return jsonify(error='GitHub sign-in expired or was already used. Please try again.'), 401
+        try:
+            response = http_requests.post('https://github.com/login/oauth/access_token',
+                json={'client_id': github_id, 'client_secret': github_secret, 'code': data['code'],
+                    'redirect_uri': frontend, 'code_verifier': attempt['verifier']},
+                headers={'Accept': 'application/json'}, timeout=15)
+            response.raise_for_status()
+            access = response.json().get('access_token')
+            if not isinstance(access, str) or not access:
+                return jsonify(error='GitHub did not authorize sign-in. Please try again.'), 401
+            headers = {'Authorization': 'Bearer ' + access, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}
+            profile_response = http_requests.get('https://api.github.com/user', headers=headers, timeout=15)
+            profile_response.raise_for_status()
+            emails_response = http_requests.get('https://api.github.com/user/emails', headers=headers, timeout=15)
+            emails_response.raise_for_status()
+            profile, emails = profile_response.json(), emails_response.json()
+            candidates = [item for item in emails if isinstance(item, dict) and item.get('verified') is True]
+            candidates.sort(key=lambda item: not item.get('primary', False))
+            email = next((email_from(item) for item in candidates if email_from(item)), None)
+            subject = profile.get('id')
+            if not isinstance(subject, int) or isinstance(subject, bool) or subject <= 0 or not email:
+                return jsonify(error='GitHub needs a verified email address before you can sign in.'), 401
+            name = profile.get('name') or profile.get('login') or 'GitHub visitor'
+            if not isinstance(name, str):
+                name = 'GitHub visitor'
+            # Access tokens are used only for these profile requests and never stored.
+            return github_identity({'github_id': str(subject), 'email': email, 'name': name[:80]})
+        except (http_requests.RequestException, ValueError, TypeError, AttributeError):
+            return jsonify(error='GitHub sign-in could not be completed. Please try again.'), 503
+
+    @app.post('/api/github/link')
+    def github_link():
+        if request.headers.get('Origin') not in origins:
+            return jsonify(error='Use the website to link your account.'), 403
+        if limited('github-link', request.remote_addr, 10, 900):
+            return too_many()
+        data = body()
+        ticket = data.get('link_ticket')
+        if not isinstance(ticket, str) or not 20 <= len(ticket) <= 128 or not valid_password(data.get('password')):
+            return jsonify(error='Enter your website password.'), 400
+        record = db.provider_links.find_one_and_delete({'_id': digest(ticket), 'expires_at': {'$gt': utcnow()}})
+        if not record:
+            return jsonify(error='Account linking expired. Please choose GitHub again.'), 401
+        response = github_identity(record['identity'], data['password'])
+        if not isinstance(response, tuple):
+            db.provider_links.delete_one({'_id': record['_id']})
+        return response
 
     @app.get('/api/me')
     @require_login
