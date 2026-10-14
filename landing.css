@@ -73,8 +73,9 @@ footer{border-color:#dce8ed;font-size:10px;max-width:1400px}
 .welcome .auth-card{padding:30px}.welcome .auth-card .access-icon{display:none}.welcome .auth-card h2{max-width:none;font-size:28px}
 .provider-access{padding:20px 0 23px;margin:15px 0 0;border-bottom:1px solid var(--line)}
 .provider-title{font-size:14px;font-weight:600;color:var(--ink);margin:0 0 15px}
+#google-access{width:300px;max-width:100%}
 #google-button{justify-content:flex-start;margin:0 0 12px;min-height:40px}
-.github-button{display:flex;align-items:center;justify-content:center;gap:11px;background:#24292f;color:#fff;border:1px solid #24292f;border-radius:5px;min-height:42px;width:100%;font-size:14px;font-weight:600;padding:10px 16px}.github-button:hover{background:#363c43}.github-button svg{width:19px;height:19px}
+.github-button{display:flex;align-items:center;justify-content:center;gap:11px;background:#24292f;color:#fff;border:1px solid #24292f;border-radius:5px;height:40px;width:300px;max-width:100%;font-size:14px;font-weight:600;padding:8px 12px}.github-button:hover{background:#363c43}.github-button svg{width:19px;height:19px}
 .provider-hint{font-size:12px;line-height:1.7;color:var(--muted);margin:14px 0 0}
 .email-access{margin-top:22px}.email-access summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:600;line-height:1.6}.email-help{font-size:12px;line-height:1.7;color:var(--muted);margin-top:15px}.welcome .email-access .tabs{margin:15px 0}.welcome .email-access .tabs button{font-size:12px;padding:10px 8px}
 .link-form{margin-top:22px;background:var(--sky);border-radius:10px;padding:18px}.link-form h3{font-family:var(--display);font-size:18px}.link-form p{font-size:13px;line-height:1.6}.link-form .primary{margin-top:14px}.link-form .text-button{margin-top:12px}

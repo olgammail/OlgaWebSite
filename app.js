@@ -249,6 +249,8 @@ function setupGoogle(clientId) {
   script.async = true;
   script.onload = () => {
     google.accounts.id.initialize({ client_id: clientId, callback: handleGoogle, auto_select: false });
+    // Measure the visible container; hidden elements report a width of zero.
+    $('google-access').hidden = false;
     google.accounts.id.renderButton($('google-button'), { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', locale: 'en', width: Math.min(300, Math.max(200, $('google-button').clientWidth)) });
     googleReady = true;
     $('google-access').hidden = mode === 'reset' || mode === 'update';
