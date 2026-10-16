@@ -150,8 +150,8 @@ function render() {
   for (const app of visible) {
     const card = document.createElement('article'); card.className = 'app-card';
     const icon = document.createElement('span'); icon.className = 'app-icon'; icon.textContent = app.icon || '↗'; icon.setAttribute('aria-hidden', 'true');
-    const title = document.createElement('h3'); title.textContent = app.name;
-    const description = document.createElement('p'); description.textContent = app.description;
+    const title = document.createElement('h3'); title.textContent = app.name; title.dir = 'auto';
+    const description = document.createElement('p'); description.textContent = app.description; description.dir = 'auto';
     const url = safeUrl(app.url);
     const link = document.createElement(url ? 'a' : 'span'); link.className = 'app-link';
     link.textContent = url ? 'Explore project ↗' : 'Project link coming soon';

@@ -7,5 +7,14 @@
     "url": "https://pythonbasedmemorycards.onrender.com/",
     "icon": "🃏",
     "sort_order": 1
+  },
+  {
+    "slug": "real-estate-helper-bot",
+    "name": "עוזר חכם לחיפוש נכס",
+    "description": "בוט נדל״ן המבוסס על תהליך עבודה עם מספר סוכני AI ‏(Multi-Agent) ו־RAG לשליפת מידע רלוונטי. הבוט מברר את העדפות הלקוח באמצעות כמה שאלות ומסייע בחיפוש נכס באזור תל אביב או חיפה. הוא מציג דוגמאות ממקורות מידע פתוחים ושולח הודעה לצוות הנדל״ן להמשך טיפול.",
+    "category": "AI Services",
+    "url": "https://alexkuznetsov.app.n8n.cloud/webhook/3598c7d6-1ee9-4881-a9f2-d7fcb144e4cf/chat",
+    "icon": "🏠",
+    "sort_order": 2
   }
 ]
