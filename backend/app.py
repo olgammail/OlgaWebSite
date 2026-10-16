@@ -104,7 +104,6 @@ def create_app(database=None, settings=None):
     db.password_resets.create_index('token_hash', unique=True)
     db.password_resets.create_index('expires_at', expireAfterSeconds=0)
     db.rate_limits.create_index('expires_at', expireAfterSeconds=0)
-    db.applications.create_index('slug', unique=True)
     dummy_hash = generate_password_hash(secrets.token_urlsafe(32), method='scrypt')
     smtp_ready = bool(cfg.get('SMTP_HOST') and cfg.get('SMTP_FROM'))
     google_client_id = cfg.get('GOOGLE_CLIENT_ID', '').strip()
@@ -428,12 +427,6 @@ def create_app(database=None, settings=None):
     def logout():
         db.sessions.delete_one({'_id': g.session['_id']})
         return jsonify(message='Signed out.')
-
-    @app.get('/api/applications')
-    @require_login
-    def applications():
-        fields = {'_id': 0, 'name': 1, 'description': 1, 'category': 1, 'url': 1, 'icon': 1}
-        return jsonify(applications=list(db.applications.find({}, fields).sort([('sort_order', 1), ('name', 1)])))
 
     @app.post('/api/password-reset/request')
     def request_reset():

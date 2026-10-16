@@ -188,9 +188,14 @@ async function showUser(session) {
   $('greeting').textContent = `Signed in as ${session.user.email || 'a registered visitor'}.`;
   message('directory-message', 'Loading Olga’s projects…');
   try {
-    const result = await api('/api/applications', { authenticated: true });
+    // Confirm the website session, then load public project content from GitHub Pages.
+    await api('/api/me', { authenticated: true });
+    const response = await fetch(new URL('projects.json', document.baseURI), { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error('The project list could not be loaded.');
+    const projects = await response.json();
+    if (!Array.isArray(projects) || !projects.every(project => project && typeof project.name === 'string' && typeof project.description === 'string' && typeof project.url === 'string')) throw new Error('The project list is invalid.');
     if (version !== loadVersion) return;
-    applications = result.applications || [];
+    applications = projects.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
     message('directory-message');
     render();
   } catch (error) {

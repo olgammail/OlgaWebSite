@@ -34,7 +34,7 @@ class AuthTests(unittest.TestCase):
         self.assertNotIn('password', user)
         self.assertNotIn('token', response.json)
         self.assertEqual(self.db.sessions.count_documents({}), 0)
-        self.assertEqual(self.client.get('/api/applications').status_code, 401)
+        self.assertEqual(self.client.get('/api/me').status_code, 401)
 
     def test_duplicate_email_is_case_insensitive(self):
         self.register()
@@ -64,19 +64,17 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json['user'], {'name': 'Test Visitor', 'email': 'visitor@example.com'})
 
-    def test_directory_requires_real_token(self):
-        self.db.applications.insert_one({'slug': 'game', 'name': 'Private game', 'url': 'https://example.com/game', 'sort_order': 1})
-        response = self.client.get('/api/applications', headers=self.auth('fake-token'))
+    def test_account_requires_real_token_and_does_not_use_project_storage(self):
+        response = self.client.get('/api/me', headers=self.auth('fake-token'))
         self.assertEqual(response.status_code, 401)
-        self.assertNotIn('Private game', response.get_data(as_text=True))
-        response = self.client.get('/api/applications', headers=self.auth(self.login()))
-        self.assertEqual(response.json['applications'][0]['name'], 'Private game')
-        self.assertNotIn('_id', response.json['applications'][0])
+        response = self.client.get('/api/me', headers=self.auth(self.login()))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('applications', self.db.list_collection_names())
 
     def test_expiry_checked_before_background_ttl_cleanup(self):
         token = self.login()
         self.db.sessions.update_one({}, {'$set': {'expires_at': utcnow() - timedelta(seconds=1)}})
-        for path in ['/api/me', '/api/applications']:
+        for path in ['/api/me']:
             self.assertEqual(self.client.get(path, headers=self.auth(token)).status_code, 401)
 
     def test_logout_revokes_token(self):

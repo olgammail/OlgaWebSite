@@ -24,7 +24,7 @@ class GoogleTests(unittest.TestCase):
         self.assertEqual(self.db.users.count_documents({}), 1)
         self.assertEqual(self.client.post('/api/login', json={'email': self.claims['email'], 'password': 'incorrect-pass'}).status_code, 401)
         auth = {'Authorization': 'Bearer ' + first.json['token']}
-        self.assertEqual(self.client.get('/api/applications', headers=auth).status_code, 200)
+        self.assertEqual(self.client.get('/api/me', headers=auth).status_code, 200)
         self.client.post('/api/logout', json={}, headers=auth)
         self.assertEqual(self.client.get('/api/me', headers=auth).status_code, 401)
     @patch('backend.app.google_id_token.verify_oauth2_token')

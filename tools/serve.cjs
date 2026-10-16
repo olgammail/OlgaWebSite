@@ -3,8 +3,8 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const allowed = new Set(['index.html', 'styles.css', 'landing.css', 'app.js', 'config.js', 'workspace-preview.local.html', 'auth-preview.local.html']);
-const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
+const allowed = new Set(['index.html', 'styles.css', 'landing.css', 'app.js', 'config.js', 'projects.json', 'workspace-preview.local.html', 'auth-preview.local.html']);
+const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json' };
 http.createServer((req, res) => {
   let filename;
   try { filename = decodeURIComponent(new URL(req.url, 'http://localhost').pathname).slice(1) || 'index.html'; }

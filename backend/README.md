@@ -1,6 +1,6 @@
 # Python login backend — MongoDB Atlas + Render
 
-Flask API for registration, login, sessions, logout, and a protected project list. Uses PyMongo for Atlas and Werkzeug scrypt for password hashing. Optional SMTP supports password reset. The frontend now uses this API instead of Supabase.
+Flask API for registration, login, sessions, logout, and session verification. Uses PyMongo for Atlas and Werkzeug scrypt for password hashing. Optional SMTP supports password reset. The frontend now uses this API instead of Supabase.
 
 ## Prepare your MongoDB connection
 
@@ -39,31 +39,15 @@ It listens on http://localhost:5000. Open http://localhost:5000/health: `{"statu
 
 In another terminal, run `node tools/serve.cjs` from the website root and open http://localhost:4173. Register with a name, email, and password, then sign in. Ctrl+C stops each server.
 
-## Add your game
+## Connection check
 
-For a read-only connection check before starting the server, run from the website root:
+From the website root, run `.\.venv\Scripts\python.exe backend/check_connection.py` to send a read-only MongoDB ping.
 
-```powershell
-.\.venv\Scripts\python.exe backend/check_connection.py
-```
+## Project cards
 
-This sends `ping` without creating any collections or indexes. It reports the failure stage without showing credentials. Backend startup now runs the same check before creating indexes. Atlas Free clusters do not offer downloadable database server logs; use this local diagnostic for connection troubleshooting.
+The public website file `projects.json` contains the project cards. The frontend loads it after validating the visitor session with `/api/me`. The backend does not read or write project records. Update and publish the website file to add or edit projects.
 
-The project list is stored in MongoDB. Make a private local copy of the project file:
-
-```powershell
-Copy-Item backend/projects.example.json backend/projects.local.json
-```
-
-Edit its name, description, and URL. Use the game's actual frontend/launch URL, which may differ from its Python API URL. Then run:
-
-```powershell
-Set-Location backend
-..\.venv\Scripts\python.exe manage.py seed-projects --file projects.local.json
-Set-Location ..
-```
-
-Re-running updates matching `slug` values and keeps other projects. No public API lets visitors add/change projects. You can alternatively edit the `applications` collection in Atlas Data Explorer. The local JSON file is ignored by Git. Intentionally use a separate committed JSON file if its URLs are public and you want version history.
+An old `applications` collection from the previous implementation may still exist in Atlas. It is no longer used; this change does not delete existing database data.
 
 ## Deploy a separate Render Web Service
 
@@ -109,7 +93,7 @@ This version does not verify email ownership during registration. All registered
 - Accounts and sessions survive Render restarts because they live in MongoDB.
 - The directory requires login. Linked applications need their own authorization to prevent direct access to their URLs; this portal does not automatically authenticate your game.
 
-Collections: `users`, `sessions`, `password_resets`, `rate_limits`, `applications`. No database credentials go to the browser.
+Collections: `users`, `sessions`, `password_resets`, `rate_limits`, `oauth_attempts`, `provider_links`. No database credentials go to the browser.
 
 ## API
 
@@ -121,7 +105,6 @@ Collections: `users`, `sessions`, `password_resets`, `rate_limits`, `application
 | `POST /api/login` | `{email,password}` → token, user, expiry |
 | `GET /api/me` | Check session |
 | `POST /api/logout` | Revoke session; send `{}` |
-| `GET /api/applications` | Read projects after authentication |
 | `POST /api/password-reset/request` | `{email}` → send link |
 | `POST /api/password-reset/confirm` | `{token,password}` → reset password |
 
