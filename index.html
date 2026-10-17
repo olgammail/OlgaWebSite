@@ -41,6 +41,13 @@
         <p class="eyebrow">STEP INSIDE THE LAB</p>
         <h2 id="auth-title">Step inside the project lab.</h2>
         <p id="auth-copy" class="muted">Sign in to browse my projects, from games to an evolving collection of AI workflows.</p>
+        <div id="startup-status" class="startup-status" role="status" aria-live="polite">
+          <span id="startup-spinner" class="startup-spinner" aria-hidden="true"></span>
+          <div><strong id="startup-title">Preparing sign-in…</strong><p id="startup-copy">Please wait while the sign-in service starts. This may take up to a minute.</p></div>
+        </div>
+        <button id="startup-retry" class="button secondary" type="button" hidden>Try again</button>
+        <fieldset id="auth-controls" class="auth-controls" disabled hidden aria-busy="true">
+        <legend class="sr-only">Sign-in options</legend>
         <section id="provider-access" class="provider-access" aria-label="Choose how to sign in">
           <p class="provider-title">Choose an account to continue</p>
           <div id="google-access" hidden><div id="google-button"></div></div>
@@ -67,6 +74,7 @@
           <button id="submit-link" class="button primary" type="submit">Link account and continue →</button>
           <button id="cancel-link" class="text-button" type="button">Cancel</button>
         </form>
+        </fieldset>
         <p id="auth-message" class="message" role="status" aria-live="polite"></p>
       </div>
       <section class="about-olga" aria-labelledby="about-heading">

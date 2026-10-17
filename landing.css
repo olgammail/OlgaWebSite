@@ -79,3 +79,11 @@ footer{border-color:#dce8ed;font-size:10px;max-width:1400px}
 .provider-hint{font-size:12px;line-height:1.7;color:var(--muted);margin:14px 0 0}
 .email-access{margin-top:22px}.email-access summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:600;line-height:1.6}.email-help{font-size:12px;line-height:1.7;color:var(--muted);margin-top:15px}.welcome .email-access .tabs{margin:15px 0}.welcome .email-access .tabs button{font-size:12px;padding:10px 8px}
 .link-form{margin-top:22px;background:var(--sky);border-radius:10px;padding:18px}.link-form h3{font-family:var(--display);font-size:18px}.link-form p{font-size:13px;line-height:1.6}.link-form .primary{margin-top:14px}.link-form .text-button{margin-top:12px}
+
+.auth-controls{border:0;padding:0;margin:0;min-width:0;width:100%}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.startup-status{display:flex;align-items:flex-start;gap:15px;margin:25px 0 10px;padding:20px;background:var(--sky);border:1px solid var(--line);border-radius:12px}
+.startup-status strong{font-size:15px;color:var(--ink)}.startup-status p{font-size:13px;line-height:1.7;color:var(--muted);margin:7px 0 0}
+.startup-spinner{width:25px;height:25px;flex:0 0 25px;border:3px solid #c5d6f5;border-top-color:var(--blue);border-radius:50%;animation:startup-turn 1s linear infinite;margin-top:3px}
+#startup-retry{margin-top:15px}@keyframes startup-turn{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.startup-spinner{animation:none}}

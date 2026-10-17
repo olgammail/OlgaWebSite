@@ -27,13 +27,13 @@ function saveToken(value) {
     else sessionStorage.removeItem('olga-portal-session');
   } catch {}
 }
-async function api(path, { method = 'GET', data, authenticated = false } = {}) {
+async function api(path, { method = 'GET', data, authenticated = false, timeoutMs = 45000 } = {}) {
   if (!apiBase) throw new Error('The login service is not connected yet. Please return after setup is complete.');
   const headers = {};
   if (data !== undefined) headers['Content-Type'] = 'application/json';
   if (authenticated && token) headers.Authorization = `Bearer ${token}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${apiBase}${path}`, { method, headers, body: data === undefined ? undefined : JSON.stringify(data), signal: controller.signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' });
     const result = await response.json();
@@ -226,15 +226,49 @@ $('logout').onclick = async () => {
     else message('directory-message', error.message, true);
   } finally { $('logout').disabled = false; }
 };
+let initializing = false, startupReady = false;
+async function waitForLoginService() {
+  const deadline = Date.now() + 120000;
+  while (Date.now() < deadline) {
+    try {
+      const capabilities = await api('/api/config', { timeoutMs: Math.min(20000, deadline - Date.now()) });
+      if (!capabilities || typeof capabilities.password_reset_available !== 'boolean' || typeof capabilities.google_client_id !== 'string' || typeof capabilities.github_available !== 'boolean') throw new Error('Invalid service response.');
+      return capabilities;
+    } catch (error) {
+      if (error.status === 403 || error.status === 404) throw error;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
+      await new Promise(resolve => setTimeout(resolve, Math.min(3000, remaining)));
+    }
+  }
+  throw new Error('Sign-in is temporarily unavailable.');
+}
 async function initialize() {
+  if (initializing || startupReady) return;
+  initializing = true;
+  $('auth-controls').hidden = true;
+  $('auth-controls').disabled = true;
+  $('auth-controls').setAttribute('aria-busy', 'true');
+  $('startup-status').hidden = false;
+  $('startup-spinner').hidden = false;
+  $('startup-retry').hidden = true;
+  $('startup-title').textContent = 'Preparing sign-in…';
+  $('startup-copy').textContent = 'Please wait while the sign-in service starts. This may take up to a minute.';
+  message('auth-message');
   $('forgot').hidden = true;
   if (resetToken) setMode('update');
-  if (!apiBase) {
-    message('auth-message', 'Visitor accounts are being set up. Registration and login will be available soon.');
-    return;
-  }
+  const slowTimer = setTimeout(() => {
+    $('startup-copy').textContent = 'The sign-in service is still starting. Please keep this page open; your sign-in options will appear automatically.';
+  }, 20000);
   try {
-    const capabilities = await api('/api/config');
+    if (!apiBase) throw new Error('The login service is not configured.');
+    const capabilities = await waitForLoginService();
+    clearTimeout(slowTimer);
+    startupReady = true;
+    $('startup-status').hidden = true;
+    $('auth-controls').hidden = false;
+    $('auth-controls').disabled = false;
+    $('auth-controls').setAttribute('aria-busy', 'false');
     $('github-button').hidden = !capabilities.github_available;
     if (!capabilities.google_client_id && !capabilities.github_available) $('email-access').open = true;
     if (capabilities.google_client_id) setupGoogle(capabilities.google_client_id);
@@ -243,10 +277,19 @@ async function initialize() {
     if (githubCode || githubDenied) { await finishGitHub(); return; }
     if (token && !resetToken) await showUser(await api('/api/me', { authenticated: true }));
   } catch (error) {
-    if (error.status === 401) { saveToken(''); showLoggedOut(); }
+    if (!startupReady) {
+      $('startup-spinner').hidden = true;
+      $('startup-title').textContent = 'Sign-in is temporarily unavailable';
+      $('startup-copy').textContent = 'The sign-in service could not be reached. Please try again.';
+      $('startup-retry').hidden = false;
+    } else if (error.status === 401) { saveToken(''); showLoggedOut(); }
     else message('auth-message', error.message, true);
+  } finally {
+    clearTimeout(slowTimer);
+    initializing = false;
   }
 }
+$('startup-retry').onclick = initialize;
 let googleReady = false, googleBusy = false;
 function setupGoogle(clientId) {
   const script = document.createElement('script');
