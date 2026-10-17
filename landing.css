@@ -87,3 +87,22 @@ footer{border-color:#dce8ed;font-size:10px;max-width:1400px}
 .startup-spinner{width:25px;height:25px;flex:0 0 25px;border:3px solid #c5d6f5;border-top-color:var(--blue);border-radius:50%;animation:startup-turn 1s linear infinite;margin-top:3px}
 #startup-retry{margin-top:15px}@keyframes startup-turn{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.startup-spinner{animation:none}}
+
+/* Story first, sign-in below; a visual introduction to the project collection. */
+.welcome{display:flex;flex-direction:column;gap:32px;max-width:1000px;margin:0 auto}
+.welcome .intro{width:100%;padding:0}
+.welcome h1{font-size:clamp(38px,5.2vw,64px);line-height:1.12;letter-spacing:-2.5px;margin:0 0 32px}
+.welcome .intro .eyebrow{margin-bottom:19px}
+.home-story{max-width:920px;margin-top:12px}
+.home-story p{font-size:16px;line-height:1.85;color:var(--muted);margin:0 0 14px}
+.home-story .story-lead{font-size:19px;line-height:1.7;color:var(--ink)}
+.welcome .skill-ribbon{margin-top:21px}
+.welcome .auth-card{width:100%;max-width:620px;align-self:center;margin:4px 0 0;padding:30px 34px}
+.workspace .portfolio-intro{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:0 48px;align-items:center;padding-top:4px;padding-bottom:38px;margin-bottom:32px}
+.portfolio-intro>.eyebrow,.portfolio-intro>h1,.portfolio-intro>.portfolio-summary{grid-column:1}
+.workspace .portfolio-intro h1{font-size:clamp(36px,4.4vw,56px);margin:16px 0 24px}
+.portfolio-summary{font-size:16px;line-height:1.8;color:var(--muted);margin:0;max-width:630px}
+.workspace .workflow-art{grid-column:2;grid-row:1/4;margin:0;padding:24px;max-width:none}
+.workspace .workflow-track{gap:8px}.workspace .workflow-node strong{font-size:13px}.workspace .workflow-node small{font-size:10px}
+@media(max-width:900px){.workspace .portfolio-intro{grid-template-columns:1fr;gap:0}.workspace .workflow-art{grid-column:1;grid-row:auto;margin-top:26px;max-width:620px}.welcome h1{letter-spacing:-1.8px}}
+@media(max-width:760px){.welcome{gap:26px}.welcome .auth-card{padding:25px}.home-story p{font-size:15px;line-height:1.8}.home-story .story-lead{font-size:17px}.welcome h1{font-size:clamp(36px,8vw,55px);letter-spacing:-1.6px}.portfolio-summary{font-size:15px}.workspace .workflow-art{padding:20px}.workspace .workflow-track{gap:5px}}
