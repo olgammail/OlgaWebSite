@@ -217,6 +217,14 @@ def create_app(database=None, settings=None):
     def capabilities():
         return jsonify(password_reset_available=smtp_ready, google_client_id=google_client_id, github_available=github_ready)
 
+    @app.get('/api/ready')
+    def ready():
+        # A live process alone does not mean registration/login can use MongoDB.
+        # The existing database error handler returns a safe 503 on failure.
+        db.command('ping')
+        return jsonify(ready=True, password_reset_available=smtp_ready,
+                       google_client_id=google_client_id, github_available=github_ready)
+
     @app.post('/api/register')
     def register():
         if limited('register', request.remote_addr, 5, 3600):

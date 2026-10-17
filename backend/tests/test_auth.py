@@ -3,6 +3,7 @@ from datetime import timedelta
 from unittest.mock import patch
 import mongomock
 from backend.app import create_app, digest, utcnow
+from pymongo.errors import ConnectionFailure
 
 
 class AuthTests(unittest.TestCase):
@@ -15,6 +16,25 @@ class AuthTests(unittest.TestCase):
 
     def register(self):
         return self.client.post('/api/register', json=self.account)
+
+    def test_readiness_checks_database_and_returns_public_configuration(self):
+        with patch.object(self.db, 'command', return_value={'ok': 1}) as command:
+            response = self.client.get('/api/ready', headers={'Origin': 'http://localhost:4173'})
+        self.assertEqual(response.status_code, 200)
+        command.assert_called_once_with('ping')
+        self.assertIs(response.json['ready'], True)
+        self.assertIn('google_client_id', response.json)
+        self.assertIn('github_available', response.json)
+        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'http://localhost:4173')
+        self.assertEqual(response.headers['Cache-Control'], 'no-store')
+        self.assertEqual(self.db.users.count_documents({}), 0)
+
+    def test_readiness_does_not_report_ready_when_database_is_unavailable(self):
+        with patch.object(self.db, 'command', side_effect=ConnectionFailure('private connection detail')):
+            response = self.client.get('/api/ready')
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn('private connection detail', response.get_data(as_text=True))
+        self.assertNotIn('ready', response.json)
 
     def login(self):
         self.register()

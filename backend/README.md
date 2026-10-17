@@ -136,3 +136,7 @@ Google Auth Platform Audience controls testing/public availability. Complete a r
 Create an OAuth App at https://github.com/settings/developers with Homepage URL and Authorization callback URL both set to https://olgammail.github.io/OlgaWebSite/. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET privately in Render Environment after approving deployment. Do not put the secret in source files or the browser. The button stays hidden until both backend settings exist.
 
 The backend requests read:user and user:email only, verifies the user with GitHub's API, and uses the stable GitHub user ID plus a verified email. It uses a short-lived one-use state bound to the initiating browser tab and PKCE S256. Access tokens are never stored. Email collisions require the existing website password before linking; Google-only accounts without a website password aren't linked automatically. Account-link tickets expire after five minutes. Login still requires a real provider verification.
+
+## Startup readiness
+
+GET /api/ready performs a read-only MongoDB ping and returns ready=true plus the public sign-in configuration only on success. Database failures return 503 without connection details. The frontend blocks sign-in during this check, retries for up to two minutes, and stops checking after success. GET /health remains available for Render health checks; GET /api/config remains available for compatibility. No users, sessions, or project records are created by readiness checks.

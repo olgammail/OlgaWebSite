@@ -231,11 +231,11 @@ async function waitForLoginService() {
   const deadline = Date.now() + 120000;
   while (Date.now() < deadline) {
     try {
-      const capabilities = await api('/api/config', { timeoutMs: Math.min(20000, deadline - Date.now()) });
-      if (!capabilities || typeof capabilities.password_reset_available !== 'boolean' || typeof capabilities.google_client_id !== 'string' || typeof capabilities.github_available !== 'boolean') throw new Error('Invalid service response.');
+      const capabilities = await api('/api/ready', { timeoutMs: Math.min(20000, deadline - Date.now()) });
+      if (!capabilities || capabilities.ready !== true || typeof capabilities.password_reset_available !== 'boolean' || typeof capabilities.google_client_id !== 'string' || typeof capabilities.github_available !== 'boolean') throw new Error('Invalid service response.');
       return capabilities;
     } catch (error) {
-      if (error.status === 403 || error.status === 404) throw error;
+      if (error.status === 403) throw error;
       const remaining = deadline - Date.now();
       if (remaining <= 0) break;
       await new Promise(resolve => setTimeout(resolve, Math.min(3000, remaining)));
