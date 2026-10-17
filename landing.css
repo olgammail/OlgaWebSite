@@ -99,10 +99,13 @@ footer{border-color:#dce8ed;font-size:10px;max-width:1400px}
 .welcome .skill-ribbon{margin-top:21px}
 .welcome .auth-card{width:100%;max-width:620px;align-self:center;margin:4px 0 0;padding:30px 34px}
 .workspace .portfolio-intro{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:0 48px;align-items:center;padding-top:4px;padding-bottom:38px;margin-bottom:32px}
-.portfolio-intro>.eyebrow,.portfolio-intro>h1,.portfolio-intro>.portfolio-summary{grid-column:1}
+.portfolio-intro>.eyebrow,.portfolio-intro>h1,.portfolio-intro>.portfolio-summary,.portfolio-intro>.contact-links{grid-column:1}
 .workspace .portfolio-intro h1{font-size:clamp(36px,4.4vw,56px);margin:16px 0 24px}
 .portfolio-summary{font-size:16px;line-height:1.8;color:var(--muted);margin:0;max-width:630px}
-.workspace .workflow-art{grid-column:2;grid-row:1/4;margin:0;padding:24px;max-width:none}
+.workspace .workflow-art{grid-column:2;grid-row:1/5;margin:0;padding:24px;max-width:none}
 .workspace .workflow-track{gap:8px}.workspace .workflow-node strong{font-size:13px}.workspace .workflow-node small{font-size:10px}
 @media(max-width:900px){.workspace .portfolio-intro{grid-template-columns:1fr;gap:0}.workspace .workflow-art{grid-column:1;grid-row:auto;margin-top:26px;max-width:620px}.welcome h1{letter-spacing:-1.8px}}
 @media(max-width:760px){.welcome{gap:26px}.welcome .auth-card{padding:25px}.home-story p{font-size:15px;line-height:1.8}.home-story .story-lead{font-size:17px}.welcome h1{font-size:clamp(36px,8vw,55px);letter-spacing:-1.6px}.portfolio-summary{font-size:15px}.workspace .workflow-art{padding:20px}.workspace .workflow-track{gap:5px}}
+.contact-links{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.contact-links a{display:inline-flex;align-items:center;gap:12px;padding:10px 15px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--blue);font-size:14px;font-weight:600;text-decoration:none}
+.contact-links a:hover{border-color:var(--blue);background:var(--sky)}
